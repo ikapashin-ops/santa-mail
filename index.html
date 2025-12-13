@@ -33,12 +33,13 @@
         button:disabled{opacity:0.6;cursor:not-allowed}
         .msg{background:#499F87;color:#fff;padding:20px 30px;border-radius:12px;margin-top:25px;text-align:center;font-size:16px;font-weight:normal;display:none;border-left:5px solid #135D46;box-shadow:0 4px 15px rgba(73,159,135,0.3)}
         
-        .pdf-template{width:800px;background:#135D46;position:relative;overflow:hidden;font-family:'Roboto',sans-serif;padding:50px 0}
-        .pdf-template::before,.pdf-template::after{content:'';position:absolute;left:0;right:0;height:50px;background:repeating-linear-gradient(45deg,#499F87 0,#499F87 60px,transparent 60px,transparent 85px,#FF5252 56px,#FF5252 145px,transparent 145px,transparent 170px);z-index:1}
-        .pdf-template::before{top:0}
-        .pdf-template::after{bottom:0}
+        /* PDF Template */
+        .pdf-template{width:800px;min-height:1100px;background:#135D46;position:relative;overflow:hidden;font-family:'Roboto',sans-serif;padding:0}
+        .pdf-stripe{position:absolute;left:0;right:0;height:50px;background:repeating-linear-gradient(45deg,#499F87 0,#499F87 60px,transparent 60px,transparent 85px,#FF5252 56px,#FF5252 145px,transparent 145px,transparent 170px);z-index:1}
+        .pdf-stripe-top{top:0}
+        .pdf-stripe-bottom{bottom:0}
         .pdf-snowflake{position:absolute;color:rgba(255,255,255,0.15);font-size:30px;z-index:1}
-        .pdf-content{position:relative;z-index:2;padding:120px 80px 80px}
+        .pdf-content{position:relative;z-index:2;padding:120px 80px 80px;min-height:1100px}
         .pdf-title{color:#fff;font-size:48px;font-weight:bold;text-align:center;margin-bottom:60px;text-shadow:2px 2px 4px rgba(0,0,0,0.2)}
         .pdf-card{background:#fef9f0;border-radius:30px;padding:50px;box-shadow:0 8px 30px rgba(0,0,0,0.3)}
         .pdf-text{color:#135D46;font-size:20px;line-height:1.8;margin-bottom:40px;white-space:pre-wrap;word-wrap:break-word}
@@ -79,6 +80,11 @@
 
     <div id="pdfTemplate" style="position:fixed;left:-9999px;top:0;width:800px">
         <div class="pdf-template">
+            <!-- Полоски как реальные элементы -->
+            <div class="pdf-stripe pdf-stripe-top"></div>
+            <div class="pdf-stripe pdf-stripe-bottom"></div>
+            
+            <!-- Снежинки -->
             <div class="pdf-snowflake" style="top:100px;left:50px">❄</div>
             <div class="pdf-snowflake" style="top:200px;right:80px">❄</div>
             <div class="pdf-snowflake" style="top:400px;left:100px">❄</div>
@@ -157,7 +163,7 @@
                     
                     const element = document.getElementById('pdfTemplate');
                     
-                    // ВАЖНО: Временно показываем элемент для рендера
+                    // Временно показываем элемент
                     element.style.position = 'fixed';
                     element.style.left = '0';
                     element.style.top = '0';
@@ -165,8 +171,9 @@
                     element.style.opacity = '0';
                     element.style.pointerEvents = 'none';
                     
-                    // Даем браузеру время отрендерить
-                    await new Promise(r => setTimeout(r, 100));
+                    // Ждем загрузки шрифтов
+                    await document.fonts.ready;
+                    await new Promise(r => setTimeout(r, 200));
                     
                     // Генерируем canvas
                     const canvas = await html2canvas(element, {
@@ -175,7 +182,9 @@
                         logging: false,
                         backgroundColor: '#135D46',
                         width: 800,
-                        windowWidth: 800
+                        height: 1100,
+                        windowWidth: 800,
+                        windowHeight: 1100
                     });
                     
                     // Прячем обратно
