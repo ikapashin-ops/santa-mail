@@ -6,7 +6,6 @@
     <title>Почта Деда Мороза</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Roboto',sans-serif;background:#135D46;min-height:100vh;overflow-x:hidden;display:flex;align-items:center;justify-content:center;padding:50px 20px}
@@ -32,19 +31,6 @@
         button:hover{background:#e63946;transform:translateY(-3px)}
         button:disabled{opacity:0.6;cursor:not-allowed}
         .msg{background:#499F87;color:#fff;padding:20px 30px;border-radius:12px;margin-top:25px;text-align:center;font-size:16px;font-weight:normal;display:none;border-left:5px solid #135D46;box-shadow:0 4px 15px rgba(73,159,135,0.3)}
-        
-        /* PDF Template */
-        .pdf-template{width:800px;min-height:1100px;background:#135D46;position:relative;overflow:hidden;font-family:'Roboto',sans-serif;padding:0}
-        .pdf-stripe{position:absolute;left:0;right:0;height:50px;background:repeating-linear-gradient(45deg,#499F87 0,#499F87 60px,transparent 60px,transparent 85px,#FF5252 56px,#FF5252 145px,transparent 145px,transparent 170px);z-index:1}
-        .pdf-stripe-top{top:0}
-        .pdf-stripe-bottom{bottom:0}
-        .pdf-snowflake{position:absolute;color:rgba(255,255,255,0.15);font-size:30px;z-index:1}
-        .pdf-content{position:relative;z-index:2;padding:120px 80px 80px;min-height:1100px}
-        .pdf-title{color:#fff;font-size:48px;font-weight:bold;text-align:center;margin-bottom:60px;text-shadow:2px 2px 4px rgba(0,0,0,0.2)}
-        .pdf-card{background:#fef9f0;border-radius:30px;padding:50px;box-shadow:0 8px 30px rgba(0,0,0,0.3)}
-        .pdf-text{color:#135D46;font-size:20px;line-height:1.8;margin-bottom:40px;white-space:pre-wrap;word-wrap:break-word}
-        .pdf-signature{color:#135D46;font-size:24px;font-weight:bold;text-align:right}
-        
         @media(max-width:768px){body::before,body::after{height:40px}.wrap{margin:60px auto}.form{padding:30px 20px}h1{font-size:28px}}
     </style>
 </head>
@@ -78,30 +64,6 @@
         </div>
     </div>
 
-    <div id="pdfTemplate" style="position:fixed;left:-9999px;top:0;width:800px">
-        <div class="pdf-template">
-            <!-- Полоски как реальные элементы -->
-            <div class="pdf-stripe pdf-stripe-top"></div>
-            <div class="pdf-stripe pdf-stripe-bottom"></div>
-            
-            <!-- Снежинки -->
-            <div class="pdf-snowflake" style="top:100px;left:50px">❄</div>
-            <div class="pdf-snowflake" style="top:200px;right:80px">❄</div>
-            <div class="pdf-snowflake" style="top:400px;left:100px">❄</div>
-            <div class="pdf-snowflake" style="top:600px;right:120px">❄</div>
-            <div class="pdf-snowflake" style="top:800px;left:150px">❄</div>
-            <div class="pdf-snowflake" style="top:300px;right:200px">❄</div>
-            
-            <div class="pdf-content">
-                <div class="pdf-title">Вам Новогоднее Письмо!</div>
-                <div class="pdf-card">
-                    <div class="pdf-text" id="pdfMessage"></div>
-                    <div class="pdf-signature" id="pdfSender"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
         const token = '8587638548:AAF11Jq3P-bWbZHI_2FonXGn08SpTZGPTuQ';
         const chat_id = '742126021';
@@ -129,7 +91,7 @@
                 
                 // 2. Генерируем PDF
                 submitBtn.textContent = '📄 Генерируем PDF...';
-                const pdfBlob = await generatePDF(name, message);
+                const pdfBlob = await generateSimplePDF(name, message);
                 
                 // 3. Отправляем PDF
                 submitBtn.textContent = '📤 Отправляем PDF...';
@@ -154,64 +116,77 @@
             }
         };
 
-        async function generatePDF(sender, message) {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    // Заполняем шаблон
-                    document.getElementById('pdfMessage').textContent = message;
-                    document.getElementById('pdfSender').textContent = `От ${sender}`;
-                    
-                    const element = document.getElementById('pdfTemplate');
-                    
-                    // Временно показываем элемент
-                    element.style.position = 'fixed';
-                    element.style.left = '0';
-                    element.style.top = '0';
-                    element.style.zIndex = '-1';
-                    element.style.opacity = '0';
-                    element.style.pointerEvents = 'none';
-                    
-                    // Ждем загрузки шрифтов
-                    await document.fonts.ready;
-                    await new Promise(r => setTimeout(r, 200));
-                    
-                    // Генерируем canvas
-                    const canvas = await html2canvas(element, {
-                        scale: 2,
-                        useCORS: true,
-                        logging: false,
-                        backgroundColor: '#135D46',
-                        width: 800,
-                        height: 1100,
-                        windowWidth: 800,
-                        windowHeight: 1100
-                    });
-                    
-                    // Прячем обратно
-                    element.style.left = '-9999px';
-                    element.style.opacity = '1';
-                    
-                    // Создаем PDF
-                    const { jsPDF } = window.jspdf;
-                    const imgWidth = 210; // A4 width in mm
-                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                    
-                    const pdf = new jsPDF({
-                        orientation: 'portrait',
-                        unit: 'mm',
-                        format: 'a4'
-                    });
-                    
-                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                    pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-                    
-                    const pdfBlob = pdf.output('blob');
-                    resolve(pdfBlob);
-                    
-                } catch (error) {
-                    reject(error);
-                }
+        async function generateSimplePDF(sender, message) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
             });
+            
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            // Зеленый фон
+            pdf.setFillColor(19, 93, 70); // #135D46
+            pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+            
+            // Верхняя полоска
+            pdf.setFillColor(73, 159, 135); // #499F87
+            pdf.rect(0, 0, pageWidth, 15, 'F');
+            
+            // Красные полоски
+            pdf.setFillColor(255, 82, 82); // #FF5252
+            for (let x = 20; x < pageWidth; x += 50) {
+                pdf.rect(x, 0, 20, 15, 'F');
+            }
+            
+            // Нижняя полоска
+            pdf.setFillColor(73, 159, 135);
+            pdf.rect(0, pageHeight - 15, pageWidth, 15, 'F');
+            
+            // Красные полоски
+            pdf.setFillColor(255, 82, 82);
+            for (let x = 20; x < pageWidth; x += 50) {
+                pdf.rect(x, pageHeight - 15, 20, 15, 'F');
+            }
+            
+            // Снежинки
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(20);
+            pdf.setFont(undefined, 'normal');
+            const snowflakes = [
+                {x: 20, y: 40}, {x: 170, y: 60}, {x: 40, y: 100},
+                {x: 180, y: 140}, {x: 30, y: 200}, {x: 160, y: 180}
+            ];
+            snowflakes.forEach(sf => {
+                pdf.text('❄', sf.x, sf.y);
+            });
+            
+            // Заголовок
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(32);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Вам Новогоднее Письмо!', pageWidth / 2, 50, { align: 'center' });
+            
+            // Белая карточка
+            pdf.setFillColor(254, 249, 240); // #fef9f0
+            pdf.roundedRect(20, 70, pageWidth - 40, 180, 5, 5, 'F');
+            
+            // Текст письма
+            pdf.setTextColor(19, 93, 70); // #135D46
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            
+            const lines = pdf.splitTextToSize(message, pageWidth - 60);
+            pdf.text(lines, 30, 85);
+            
+            // Подпись
+            pdf.setFontSize(14);
+            pdf.setFont(undefined, 'bold');
+            pdf.text(`От ${sender}`, pageWidth - 30, 240, { align: 'right' });
+            
+            return pdf.output('blob');
         }
 
         async function sendToTelegram(pdfBlob, sender) {
@@ -225,8 +200,7 @@
             });
             
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error('Telegram API error: ' + errorText);
+                throw new Error('Telegram API error');
             }
             
             return response.json();
