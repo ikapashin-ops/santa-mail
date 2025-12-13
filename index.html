@@ -123,69 +123,104 @@
                 ctx.fillStyle = '#135D46';
                 ctx.fillRect(0, 0, 1600, 2200);
                 
-                // Верхние полоски
-                for (let i = 0; i < 11; i++) {
-                    ctx.fillStyle = i % 2 === 0 ? '#499F87' : '#FF5252';
-                    ctx.fillRect(i * 145, 0, 145, 100);
+                // Функция для рисования скошенного прямоугольника (параллелограмм)
+                function drawSkewedRect(x, y, width, height, skew, color) {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(x + skew, y);
+                    ctx.lineTo(x + width + skew, y);
+                    ctx.lineTo(x + width, y + height);
+                    ctx.lineTo(x, y + height);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                // Верхние полоски (скошенные с отступами 16px = 32px в canvas)
+                const stripWidth = 140;
+                const stripGap = 32;
+                const stripHeight = 100;
+                const skewAmount = 30;
+                
+                let xPos = -50;
+                let colors = ['#499F87', '#FF5252'];
+                let colorIndex = 0;
+                
+                while (xPos < 1650) {
+                    drawSkewedRect(xPos, 0, stripWidth, stripHeight, skewAmount, colors[colorIndex % 2]);
+                    xPos += stripWidth + stripGap + skewAmount;
+                    colorIndex++;
                 }
                 
                 // Нижние полоски
-                for (let i = 0; i < 11; i++) {
-                    ctx.fillStyle = i % 2 === 0 ? '#499F87' : '#FF5252';
-                    ctx.fillRect(i * 145, 2100, 145, 100);
+                xPos = -50;
+                colorIndex = 0;
+                while (xPos < 1650) {
+                    drawSkewedRect(xPos, 2100, stripWidth, stripHeight, skewAmount, colors[colorIndex % 2]);
+                    xPos += stripWidth + stripGap + skewAmount;
+                    colorIndex++;
                 }
                 
-                // Снежинки
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.font = '60px Arial';
-                ctx.fillText('❄', 100, 200);
-                ctx.fillText('❄', 1400, 300);
-                ctx.fillText('❄', 200, 600);
-                ctx.fillText('❄', 1350, 900);
-                ctx.fillText('❄', 150, 1500);
-                ctx.fillText('❄', 1300, 1200);
+                // Снежинки по всей площади
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.font = '50px Arial';
+                const snowflakes = [
+                    {x: 100, y: 200}, {x: 300, y: 350}, {x: 500, y: 250},
+                    {x: 700, y: 400}, {x: 900, y: 300}, {x: 1100, y: 450},
+                    {x: 1300, y: 280}, {x: 1450, y: 380},
+                    {x: 150, y: 650}, {x: 400, y: 750}, {x: 650, y: 850},
+                    {x: 900, y: 950}, {x: 1200, y: 750}, {x: 1400, y: 900},
+                    {x: 200, y: 1150}, {x: 500, y: 1250}, {x: 800, y: 1350},
+                    {x: 1100, y: 1450}, {x: 1350, y: 1200},
+                    {x: 250, y: 1650}, {x: 550, y: 1750}, {x: 850, y: 1850},
+                    {x: 1150, y: 1950}, {x: 1400, y: 1700}
+                ];
+                
+                snowflakes.forEach(sf => {
+                    ctx.fillText('❄', sf.x, sf.y);
+                });
                 
                 // Заголовок
                 ctx.fillStyle = '#FFFFFF';
                 ctx.font = 'bold 90px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('Вам Новогоднее Письмо!', 800, 300);
+                ctx.fillText('Вам Новогоднее Письмо!', 800, 350);
                 
-                // Белая карточка с закругленными углами
+                // Белая карточка (более компактная)
                 ctx.fillStyle = '#FEF9F0';
-                roundRect(ctx, 150, 400, 1300, 1400, 60);
+                roundRect(ctx, 150, 500, 1300, 1000, 60);
                 ctx.fill();
                 
-                // Текст письма
+                // Текст письма (выровнен по левому краю)
                 ctx.fillStyle = '#135D46';
                 ctx.font = '36px Arial';
                 ctx.textAlign = 'left';
                 
                 const words = message.split(' ');
                 let line = '';
-                let y = 500;
-                const maxWidth = 1200;
-                const lineHeight = 60;
+                let y = 600;
+                const maxWidth = 1100;
+                const lineHeight = 55;
                 
                 for (let i = 0; i < words.length; i++) {
                     const testLine = line + words[i] + ' ';
                     const metrics = ctx.measureText(testLine);
                     
                     if (metrics.width > maxWidth && i > 0) {
-                        ctx.fillText(line, 200, y);
+                        ctx.fillText(line, 250, y);
                         line = words[i] + ' ';
                         y += lineHeight;
+                        if (y > 1350) break; // Ограничение высоты
                     } else {
                         line = testLine;
                     }
                 }
-                ctx.fillText(line, 200, y);
+                ctx.fillText(line, 250, y);
                 
-                // Подпись
+                // Подпись (тоже по левому краю)
                 ctx.fillStyle = '#135D46';
-                ctx.font = 'bold 44px Arial';
-                ctx.textAlign = 'right';
-                ctx.fillText(`От ${sender}`, 1400, 1700);
+                ctx.font = 'bold 40px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`От ${sender}`, 250, 1400);
                 
                 // Конвертируем в PDF
                 const { jsPDF } = window.jspdf;
