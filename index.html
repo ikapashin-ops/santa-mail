@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Почта Деда Мороза</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Roboto',sans-serif;background:#135D46;min-height:100vh;overflow-x:hidden;display:flex;align-items:center;justify-content:center;padding:50px 20px}
@@ -16,10 +17,6 @@
         .flake{position:absolute;top:-50px;opacity:0;animation:fall linear infinite}
         @keyframes fall{0%{transform:translateY(-50px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(calc(100vh + 50px));opacity:0}}
         .wrap{max-width:700px;width:100%;position:relative;z-index:10}
-        .music-btn{position:fixed;bottom:30px;right:30px;width:60px;height:60px;border-radius:50%;background:#FF5252;color:#fff;border:3px solid #499F87;font-size:28px;cursor:pointer;box-shadow:0 5px 20px rgba(255,82,82,0.4);transition:all 0.3s;z-index:100;display:flex;align-items:center;justify-content:center}
-        .music-btn:hover{transform:scale(1.1);box-shadow:0 8px 25px rgba(255,82,82,0.6)}
-        .music-btn.playing{animation:pulse 1.5s infinite}
-        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
         .santa{position:absolute;top:-30px;right:-30px;font-size:80px;transform:scaleX(-1);animation:wave 3s ease-in-out infinite;z-index:5}
         @keyframes wave{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-8px)}}
         .deadline{background:#499F87;color:#fff;padding:15px 30px;border-radius:12px;text-align:center;font-weight:bold;font-size:18px;margin-bottom:30px;box-shadow:0 0 20px rgba(73,159,135,0.3)}
@@ -36,16 +33,15 @@
         button:disabled{opacity:0.6;cursor:not-allowed}
         .msg{background:#499F87;color:#fff;padding:20px 30px;border-radius:12px;margin-top:25px;text-align:center;font-size:16px;font-weight:normal;display:none;border-left:5px solid #135D46;box-shadow:0 4px 15px rgba(73,159,135,0.3)}
         
-        /* PDF Template */
-        .pdf-template{width:800px;height:1100px;background:#135D46;position:relative;overflow:hidden;font-family:'Roboto',sans-serif}
+        .pdf-template{width:800px;background:#135D46;position:relative;overflow:hidden;font-family:'Roboto',sans-serif;padding:50px 0}
         .pdf-template::before,.pdf-template::after{content:'';position:absolute;left:0;right:0;height:50px;background:repeating-linear-gradient(45deg,#499F87 0,#499F87 60px,transparent 60px,transparent 85px,#FF5252 56px,#FF5252 145px,transparent 145px,transparent 170px);z-index:1}
         .pdf-template::before{top:0}
         .pdf-template::after{bottom:0}
-        .pdf-snowflake{position:absolute;color:rgba(255,255,255,0.15);font-size:30px}
-        .pdf-content{position:relative;z-index:2;padding:120px 80px 80px;height:100%}
+        .pdf-snowflake{position:absolute;color:rgba(255,255,255,0.15);font-size:30px;z-index:1}
+        .pdf-content{position:relative;z-index:2;padding:120px 80px 80px}
         .pdf-title{color:#fff;font-size:48px;font-weight:bold;text-align:center;margin-bottom:60px;text-shadow:2px 2px 4px rgba(0,0,0,0.2)}
         .pdf-card{background:#fef9f0;border-radius:30px;padding:50px;box-shadow:0 8px 30px rgba(0,0,0,0.3)}
-        .pdf-text{color:#135D46;font-size:20px;line-height:1.8;margin-bottom:40px;white-space:pre-wrap}
+        .pdf-text{color:#135D46;font-size:20px;line-height:1.8;margin-bottom:40px;white-space:pre-wrap;word-wrap:break-word}
         .pdf-signature{color:#135D46;font-size:24px;font-weight:bold;text-align:right}
         
         @media(max-width:768px){body::before,body::after{height:40px}.wrap{margin:60px auto}.form{padding:30px 20px}h1{font-size:28px}}
@@ -81,8 +77,7 @@
         </div>
     </div>
 
-    <!-- Hidden PDF Template -->
-    <div id="pdfTemplate" style="position:fixed;left:-9999px;top:0">
+    <div id="pdfTemplate" style="position:fixed;left:-9999px;top:0;width:800px">
         <div class="pdf-template">
             <div class="pdf-snowflake" style="top:100px;left:50px">❄</div>
             <div class="pdf-snowflake" style="top:200px;right:80px">❄</div>
@@ -117,7 +112,7 @@
             const message = document.getElementById('m').value;
             
             try {
-                // 1. Отправляем текстовое сообщение (как раньше)
+                // 1. Отправляем текстовое сообщение
                 const text = `🎄 Новое письмо Деду Морозу!\n\n👤 От: ${name}\n📨 Кому: ${recipient || 'Не указано'}\n\n💌 Письмо:\n${message}`;
                 
                 await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -128,7 +123,7 @@
                 
                 // 2. Генерируем PDF
                 submitBtn.textContent = '📄 Генерируем PDF...';
-                const pdfBlob = await generatePDF(name, recipient, message);
+                const pdfBlob = await generatePDF(name, message);
                 
                 // 3. Отправляем PDF
                 submitBtn.textContent = '📤 Отправляем PDF...';
@@ -146,37 +141,68 @@
                 }, 5000);
                 
             } catch (err) {
-                alert('Ошибка отправки. Попробуйте еще раз!');
-                console.error(err);
+                console.error('Ошибка:', err);
+                alert('Ошибка отправки: ' + err.message);
                 submitBtn.textContent = '🦌 Отправить письмо';
                 submitBtn.disabled = false;
             }
         };
 
-        async function generatePDF(sender, recipient, message) {
-            document.getElementById('pdfMessage').textContent = message;
-            document.getElementById('pdfSender').textContent = `От ${sender}`;
-            
-            const element = document.getElementById('pdfTemplate');
-            
-            const opt = {
-                margin: 0,
-                filename: `novogodnee_pismo_${sender.replace(/\s+/g, '_')}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2,
-                    useCORS: true,
-                    logging: false
-                },
-                jsPDF: { 
-                    unit: 'px', 
-                    format: [800, 1100], 
-                    orientation: 'portrait' 
+        async function generatePDF(sender, message) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // Заполняем шаблон
+                    document.getElementById('pdfMessage').textContent = message;
+                    document.getElementById('pdfSender').textContent = `От ${sender}`;
+                    
+                    const element = document.getElementById('pdfTemplate');
+                    
+                    // ВАЖНО: Временно показываем элемент для рендера
+                    element.style.position = 'fixed';
+                    element.style.left = '0';
+                    element.style.top = '0';
+                    element.style.zIndex = '-1';
+                    element.style.opacity = '0';
+                    element.style.pointerEvents = 'none';
+                    
+                    // Даем браузеру время отрендерить
+                    await new Promise(r => setTimeout(r, 100));
+                    
+                    // Генерируем canvas
+                    const canvas = await html2canvas(element, {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#135D46',
+                        width: 800,
+                        windowWidth: 800
+                    });
+                    
+                    // Прячем обратно
+                    element.style.left = '-9999px';
+                    element.style.opacity = '1';
+                    
+                    // Создаем PDF
+                    const { jsPDF } = window.jspdf;
+                    const imgWidth = 210; // A4 width in mm
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+                    
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                    
+                    const pdfBlob = pdf.output('blob');
+                    resolve(pdfBlob);
+                    
+                } catch (error) {
+                    reject(error);
                 }
-            };
-            
-            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-            return pdfBlob;
+            });
         }
 
         async function sendToTelegram(pdfBlob, sender) {
@@ -190,7 +216,8 @@
             });
             
             if (!response.ok) {
-                throw new Error('Telegram API error');
+                const errorText = await response.text();
+                throw new Error('Telegram API error: ' + errorText);
             }
             
             return response.json();
@@ -216,11 +243,10 @@
             const z = Math.random() * 12 + 4;
             const l = Math.random() * 100;
             const t = Math.random() * 8 + 12;
-            const a = 0;
             d.innerHTML = s;
-            d.style.cssText = `width:${z}px;height:${z}px;left:${l}%;opacity:${Math.random()*0.5+0.3};animation-duration:${t}s;animation-delay:${a}s`;
+            d.style.cssText = `width:${z}px;height:${z}px;left:${l}%;opacity:${Math.random()*0.5+0.3};animation-duration:${t}s`;
             c.appendChild(d);
-            setTimeout(() => d.remove(), (t + a) * 1000);
+            setTimeout(() => d.remove(), t * 1000);
         }
         
         for (let i = 0; i < 180; i++) setTimeout(f, i * 40);
