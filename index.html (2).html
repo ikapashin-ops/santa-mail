@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Почта Деда Мороза</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Roboto',sans-serif;background:#135D46;min-height:100vh;overflow-x:hidden;display:flex;align-items:center;justify-content:center;padding:50px 20px}
+        body::before,body::after{content:'';position:fixed;left:0;right:0;height:25px;background:repeating-linear-gradient(45deg,#499F87 0,#499F87 40px,transparent 40px,transparent 56px,#FF5252 56px,#FF5252 96px,transparent 96px,transparent 112px);z-index:9999;pointer-events:none}
+        body::before{top:0}
+        body::after{bottom:0}
+        .snow{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:hidden}
+        .flake{position:absolute;top:-50px;opacity:0;animation:fall linear infinite}
+        @keyframes fall{0%{transform:translateY(-50px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(calc(100vh + 50px));opacity:0}}
+        .wrap{max-width:700px;width:100%;position:relative;z-index:10}
+        .deadline{background:#499F87;color:#fff;padding:15px 30px;border-radius:12px;text-align:center;font-weight:bold;font-size:18px;margin-bottom:30px;box-shadow:0 0 20px rgba(73,159,135,0.3)}
+        .form{background:#fef9f0;border:5px solid #FF5252;border-radius:30px;padding:50px 40px;box-shadow:0 0 40px rgba(73,159,135,0.4),0 0 80px rgba(73,159,135,0.2)}
+        h1{color:#FF5252;font-size:36px;font-weight:bold;text-align:center;margin-bottom:15px}
+        .sub{color:#135D46;font-size:16px;text-align:center;margin-bottom:30px}
+        .group{margin-bottom:25px}
+        label{display:block;margin-bottom:8px;font-size:16px;font-weight:bold;color:#135D46}
+        input,textarea{width:100%;padding:15px;border:3px solid #499F87;border-radius:12px;font-size:16px;font-family:'Roboto',sans-serif}
+        input:focus,textarea:focus{outline:none;border-color:#FF5252}
+        textarea{min-height:180px;resize:vertical}
+        button{background:#FF5252;color:#fff;padding:18px 40px;border:none;border-radius:20px;font-size:20px;font-weight:bold;cursor:pointer;width:100%;transition:all 0.3s}
+        button:hover{background:#e63946;transform:translateY(-3px)}
+        .msg{background:#499F87;color:#fff;padding:20px 30px;border-radius:12px;margin-top:25px;text-align:center;font-size:16px;font-weight:normal;display:none;border-left:5px solid #135D46;box-shadow:0 4px 15px rgba(73,159,135,0.3)}
+        @media(max-width:768px){body::before,body::after{height:40px}.wrap{margin:60px auto}.form{padding:30px 20px}h1{font-size:28px}}
+    </style>
+</head>
+<body>
+    <div class="snow" id="snow"></div>
+    <div class="wrap">
+        <div class="deadline">⏰ Приём писем до 24 декабря включительно</div>
+        <div class="form">
+            <h1>✉️ Почта Деда Мороза</h1>
+            <p class="sub">Напишите тёплые слова коллегам и создайте новогоднее настроение!</p>
+            <form id="f">
+                <div class="group">
+                    <label for="n">Ваше имя <span style="color:#FF5252">*</span></label>
+                    <input type="text" id="n" placeholder="Иван Иванов" required>
+                </div>
+                <div class="group">
+                    <label for="r">Кому адресовано</label>
+                    <input type="text" id="r" placeholder="Например: Марии из отдела продаж">
+                </div>
+                <div class="group">
+                    <label for="m">Ваше письмо <span style="color:#FF5252">*</span></label>
+                    <textarea id="m" placeholder="Напишите благодарность, пожелание или тёплые слова..." required></textarea>
+                </div>
+                <button type="submit">🎅 Отправить письмо</button>
+            </form>
+            <div class="msg" id="msg">✨ Письмо успешно отправлено! Спасибо за участие! 🎄</div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('f').onsubmit=async e=>{e.preventDefault();const n=document.getElementById('n').value,r=document.getElementById('r').value,m=document.getElementById('m').value,text=`🎄 Новое письмо Деду Морозу!\n\n👤 От: ${n}\n📨 Кому: ${r||'Не указано'}\n\n💌 Письмо:\n${m}`,token='8587638548:AAF11Jq3P-bWbZHI_2FonXGn08SpTZGPTuQ',chat_id='742126021';try{await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id,text})});document.getElementById('msg').style.display='block';e.target.reset();setTimeout(()=>document.getElementById('msg').style.display='none',5000)}catch(err){alert('Ошибка отправки. Попробуйте еще раз!')}};
+        const c=document.getElementById('snow'),s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><g fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="25" y1="5" x2="25" y2="45"/><line x1="5" y1="25" x2="45" y2="25"/><line x1="12" y1="12" x2="38" y2="38"/><line x1="38" y1="12" x2="12" y2="38"/></g></svg>';
+        function f(){const d=document.createElement('div');d.className='flake';const z=Math.random()*12+4,l=Math.random()*100,t=Math.random()*8+12,a=Math.random()*10;d.innerHTML=s;d.style.cssText=`width:${z}px;height:${z}px;left:${l}%;opacity:${Math.random()*0.5+0.3};animation-duration:${t}s;animation-delay:${a}s`;c.appendChild(d);setTimeout(()=>d.remove(),(t+a)*1000)}
+        for(let i=0;i<200;i++)setTimeout(f,i*20);
+        setInterval(f,150);
+    </script>
+</body>
+</html>
