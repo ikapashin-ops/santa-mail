@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Почта Деда Мороза</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Roboto',sans-serif;background:#135D46;min-height:100vh;overflow-x:hidden;display:flex;align-items:center;justify-content:center;padding:50px 20px}
@@ -15,10 +16,6 @@
         .flake{position:absolute;top:-50px;opacity:0;animation:fall linear infinite}
         @keyframes fall{0%{transform:translateY(-50px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(calc(100vh + 50px));opacity:0}}
         .wrap{max-width:700px;width:100%;position:relative;z-index:10}
-        .music-btn{position:fixed;bottom:30px;right:30px;width:60px;height:60px;border-radius:50%;background:#FF5252;color:#fff;border:3px solid #499F87;font-size:28px;cursor:pointer;box-shadow:0 5px 20px rgba(255,82,82,0.4);transition:all 0.3s;z-index:100;display:flex;align-items:center;justify-content:center}
-        .music-btn:hover{transform:scale(1.1);box-shadow:0 8px 25px rgba(255,82,82,0.6)}
-        .music-btn.playing{animation:pulse 1.5s infinite}
-        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
         .santa{position:absolute;top:-30px;right:-30px;font-size:80px;transform:scaleX(-1);animation:wave 3s ease-in-out infinite;z-index:5}
         @keyframes wave{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-8px)}}
         .deadline{background:#499F87;color:#fff;padding:15px 30px;border-radius:12px;text-align:center;font-weight:bold;font-size:18px;margin-bottom:30px;box-shadow:0 0 20px rgba(73,159,135,0.3)}
@@ -32,6 +29,7 @@
         textarea{min-height:180px;resize:vertical}
         button{background:#FF5252;color:#fff;padding:18px 40px;border:none;border-radius:16px;font-size:20px;font-weight:bold;cursor:pointer;width:100%;transition:all 0.3s}
         button:hover{background:#e63946;transform:translateY(-3px)}
+        button:disabled{opacity:0.6;cursor:not-allowed}
         .msg{background:#499F87;color:#fff;padding:20px 30px;border-radius:12px;margin-top:25px;text-align:center;font-size:16px;font-weight:normal;display:none;border-left:5px solid #135D46;box-shadow:0 4px 15px rgba(73,159,135,0.3)}
         @media(max-width:768px){body::before,body::after{height:40px}.wrap{margin:60px auto}.form{padding:30px 20px}h1{font-size:28px}}
     </style>
@@ -60,28 +58,239 @@
                     <label for="m">Ваше письмо <span style="color:#FF5252">*</span></label>
                     <textarea id="m" placeholder="Напишите благодарность, пожелание или тёплые слова..." required></textarea>
                 </div>
-                <button type="submit">🦌 Отправить письмо</button>
+                <button type="submit" id="submitBtn">🦌 Отправить письмо</button>
             </form>
             <div class="msg" id="msg">✨ Письмо успешно отправлено! Спасибо за участие! 🎄</div>
         </div>
     </div>
+
     <script>
-        document.getElementById('f').onsubmit=async e=>{e.preventDefault();const n=document.getElementById('n').value,r=document.getElementById('r').value,m=document.getElementById('m').value,text=`🎄 Новое письмо Деду Морозу!\n\n👤 От: ${n}\n📨 Кому: ${r||'Не указано'}\n\n💌 Письмо:\n${m}`,token='8587638548:AAF11Jq3P-bWbZHI_2FonXGn08SpTZGPTuQ',chat_id='742126021';try{await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id,text})});document.getElementById('msg').style.display='block';e.target.reset();setTimeout(()=>document.getElementById('msg').style.display='none',5000)}catch(err){alert('Ошибка отправки. Попробуйте еще раз!')}};
-        
-        // Music player - autoplay on first click
-        const music=document.getElementById('music');
-        let started=false;
-        document.body.addEventListener('click',()=>{
-            if(!started){
-                music.play();
-                started=true;
+        const token = '8587638548:AAF11Jq3P-bWbZHI_2FonXGn08SpTZGPTuQ';
+        const chat_id = '742126021';
+
+        document.getElementById('f').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Обрабатываем...';
+            
+            const name = document.getElementById('n').value;
+            const recipient = document.getElementById('r').value;
+            const message = document.getElementById('m').value;
+            
+            try {
+                const text = `🎄 Новое письмо Деду Морозу!\n\n👤 От: ${name}\n📨 Кому: ${recipient || 'Не указано'}\n\n💌 Письмо:\n${message}`;
+                
+                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({chat_id, text})
+                });
+                
+                submitBtn.textContent = '📄 Генерируем PDF...';
+                const pdfBlob = await generateCanvasPDF(name, message);
+                
+                submitBtn.textContent = '📤 Отправляем PDF...';
+                await sendToTelegram(pdfBlob, name);
+                
+                document.getElementById('msg').style.display = 'block';
+                e.target.reset();
+                submitBtn.textContent = '✅ Успешно отправлено!';
+                
+                setTimeout(() => {
+                    document.getElementById('msg').style.display = 'none';
+                    submitBtn.textContent = '🦌 Отправить письмо';
+                    submitBtn.disabled = false;
+                }, 5000);
+                
+            } catch (err) {
+                console.error('Ошибка:', err);
+                alert('Ошибка отправки: ' + err.message);
+                submitBtn.textContent = '🦌 Отправить письмо';
+                submitBtn.disabled = false;
             }
-        },{once:true});
+        };
+
+        async function generateCanvasPDF(sender, message) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1600;
+                canvas.height = 2200;
+                const ctx = canvas.getContext('2d');
+                
+                // Зеленый фон
+                ctx.fillStyle = '#135D46';
+                ctx.fillRect(0, 0, 1600, 2200);
+                
+                // Функция для рисования скошенного прямоугольника (параллелограмм)
+                function drawSkewedRect(x, y, width, height, skew, color) {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(x + skew, y);
+                    ctx.lineTo(x + width + skew, y);
+                    ctx.lineTo(x + width, y + height);
+                    ctx.lineTo(x, y + height);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                // Верхние полоски (скошенные с отступами 16px = 32px в canvas)
+                const stripWidth = 140;
+                const stripGap = 32;
+                const stripHeight = 100;
+                const skewAmount = 30;
+                
+                let xPos = -50;
+                let colors = ['#499F87', '#FF5252'];
+                let colorIndex = 0;
+                
+                while (xPos < 1650) {
+                    drawSkewedRect(xPos, 0, stripWidth, stripHeight, skewAmount, colors[colorIndex % 2]);
+                    xPos += stripWidth + stripGap + skewAmount;
+                    colorIndex++;
+                }
+                
+                // Нижние полоски
+                xPos = -50;
+                colorIndex = 0;
+                while (xPos < 1650) {
+                    drawSkewedRect(xPos, 2100, stripWidth, stripHeight, skewAmount, colors[colorIndex % 2]);
+                    xPos += stripWidth + stripGap + skewAmount;
+                    colorIndex++;
+                }
+                
+                // Снежинки по всей площади
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.font = '50px Arial';
+                const snowflakes = [
+                    {x: 100, y: 200}, {x: 300, y: 350}, {x: 500, y: 250},
+                    {x: 700, y: 400}, {x: 900, y: 300}, {x: 1100, y: 450},
+                    {x: 1300, y: 280}, {x: 1450, y: 380},
+                    {x: 150, y: 650}, {x: 400, y: 750}, {x: 650, y: 850},
+                    {x: 900, y: 950}, {x: 1200, y: 750}, {x: 1400, y: 900},
+                    {x: 200, y: 1150}, {x: 500, y: 1250}, {x: 800, y: 1350},
+                    {x: 1100, y: 1450}, {x: 1350, y: 1200},
+                    {x: 250, y: 1650}, {x: 550, y: 1750}, {x: 850, y: 1850},
+                    {x: 1150, y: 1950}, {x: 1400, y: 1700}
+                ];
+                
+                snowflakes.forEach(sf => {
+                    ctx.fillText('❄', sf.x, sf.y);
+                });
+                
+                // Заголовок
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 90px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Вам Новогоднее Письмо!', 800, 350);
+                
+                // Белая карточка (более компактная)
+                ctx.fillStyle = '#FEF9F0';
+                roundRect(ctx, 150, 500, 1300, 1000, 60);
+                ctx.fill();
+                
+                // Текст письма (выровнен по левому краю)
+                ctx.fillStyle = '#135D46';
+                ctx.font = '36px Arial';
+                ctx.textAlign = 'left';
+                
+                const words = message.split(' ');
+                let line = '';
+                let y = 600;
+                const maxWidth = 1100;
+                const lineHeight = 55;
+                
+                for (let i = 0; i < words.length; i++) {
+                    const testLine = line + words[i] + ' ';
+                    const metrics = ctx.measureText(testLine);
+                    
+                    if (metrics.width > maxWidth && i > 0) {
+                        ctx.fillText(line, 250, y);
+                        line = words[i] + ' ';
+                        y += lineHeight;
+                        if (y > 1350) break; // Ограничение высоты
+                    } else {
+                        line = testLine;
+                    }
+                }
+                ctx.fillText(line, 250, y);
+                
+                // Подпись (тоже по левому краю)
+                ctx.fillStyle = '#135D46';
+                ctx.font = 'bold 40px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`От ${sender}`, 250, 1400);
+                
+                // Конвертируем в PDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                
+                resolve(pdf.output('blob'));
+            });
+        }
+
+        function roundRect(ctx, x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        async function sendToTelegram(pdfBlob, sender) {
+            const formData = new FormData();
+            formData.append('chat_id', chat_id);
+            formData.append('document', pdfBlob, `novogodnee_pismo_${sender.replace(/\s+/g, '_')}.pdf`);
+            
+            const response = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) throw new Error('Telegram API error');
+            return response.json();
+        }
         
-        const c=document.getElementById('snow'),s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><g fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="25" y1="5" x2="25" y2="45"/><line x1="5" y1="25" x2="45" y2="25"/><line x1="12" y1="12" x2="38" y2="38"/><line x1="38" y1="12" x2="12" y2="38"/></g></svg>';
-        function f(){const d=document.createElement('div');d.className='flake';const z=Math.random()*12+4,l=Math.random()*100,t=Math.random()*8+12,a=0;d.innerHTML=s;d.style.cssText=`width:${z}px;height:${z}px;left:${l}%;opacity:${Math.random()*0.5+0.3};animation-duration:${t}s;animation-delay:${a}s`;c.appendChild(d);setTimeout(()=>d.remove(),(t+a)*1000)}
-        for(let i=0;i<180;i++)setTimeout(f,i*40);
-        setInterval(f,80);
+        const music = document.getElementById('music');
+        let started = false;
+        document.body.addEventListener('click', () => {
+            if (!started) {
+                music.play();
+                started = true;
+            }
+        }, { once: true });
+        
+        const c = document.getElementById('snow');
+        const s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><g fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="25" y1="5" x2="25" y2="45"/><line x1="5" y1="25" x2="45" y2="25"/><line x1="12" y1="12" x2="38" y2="38"/><line x1="38" y1="12" x2="12" y2="38"/></g></svg>';
+        
+        function f() {
+            const d = document.createElement('div');
+            d.className = 'flake';
+            const z = Math.random() * 12 + 4;
+            const l = Math.random() * 100;
+            const t = Math.random() * 8 + 12;
+            d.innerHTML = s;
+            d.style.cssText = `width:${z}px;height:${z}px;left:${l}%;opacity:${Math.random()*0.5+0.3};animation-duration:${t}s`;
+            c.appendChild(d);
+            setTimeout(() => d.remove(), t * 1000);
+        }
+        
+        for (let i = 0; i < 180; i++) setTimeout(f, i * 40);
+        setInterval(f, 80);
     </script>
 </body>
 </html>
