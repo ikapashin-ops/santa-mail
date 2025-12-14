@@ -158,23 +158,53 @@
                     colorIndex++;
                 }
                 
-                // Плотный паттерн снежинок
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                ctx.font = '20px Arial';
-                for (let y = 100; y < 2100; y += 60) {
-                    for (let x = 50; x < 1550; x += 80) {
-                        const offsetX = (y / 60) % 2 === 0 ? 0 : 40;
-                        ctx.fillText('❄', x + offsetX, y);
-                    }
+                // Снежинки (разбросанные, не паттерн)
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineWidth = 3;
+                
+                // Функция рисования звездочки (8 лучей)
+                function drawStar(cx, cy, size) {
+                    ctx.beginPath();
+                    // Вертикальная линия
+                    ctx.moveTo(cx, cy - size);
+                    ctx.lineTo(cx, cy + size);
+                    // Горизонтальная линия
+                    ctx.moveTo(cx - size, cy);
+                    ctx.lineTo(cx + size, cy);
+                    // Диагональ 1
+                    ctx.moveTo(cx - size * 0.7, cy - size * 0.7);
+                    ctx.lineTo(cx + size * 0.7, cy + size * 0.7);
+                    // Диагональ 2
+                    ctx.moveTo(cx + size * 0.7, cy - size * 0.7);
+                    ctx.lineTo(cx - size * 0.7, cy + size * 0.7);
+                    ctx.stroke();
                 }
                 
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-                ctx.font = '14px Arial';
-                for (let y = 130; y < 2100; y += 55) {
-                    for (let x = 70; x < 1550; x += 70) {
-                        ctx.fillText('❄', x, y);
-                    }
-                }
+                // Случайно разбросанные снежинки
+                const snowflakes = [
+                    {x: 150, y: 200, size: 20}, {x: 340, y: 280, size: 25}, {x: 520, y: 180, size: 18},
+                    {x: 680, y: 320, size: 22}, {x: 850, y: 220, size: 20}, {x: 1020, y: 340, size: 24},
+                    {x: 1180, y: 260, size: 19}, {x: 1350, y: 190, size: 23}, {x: 1450, y: 310, size: 21},
+                    
+                    {x: 200, y: 580, size: 18}, {x: 380, y: 680, size: 22}, {x: 580, y: 620, size: 20},
+                    {x: 760, y: 720, size: 24}, {x: 920, y: 650, size: 19}, {x: 1100, y: 760, size: 21},
+                    {x: 1280, y: 690, size: 23}, {x: 1420, y: 780, size: 20},
+                    
+                    {x: 180, y: 1080, size: 22}, {x: 360, y: 1180, size: 20}, {x: 540, y: 1120, size: 24},
+                    {x: 720, y: 1220, size: 19}, {x: 900, y: 1160, size: 21}, {x: 1080, y: 1260, size: 23},
+                    {x: 1260, y: 1200, size: 20}, {x: 1440, y: 1140, size: 22},
+                    
+                    {x: 220, y: 1580, size: 21}, {x: 400, y: 1680, size: 23}, {x: 600, y: 1620, size: 19},
+                    {x: 780, y: 1720, size: 22}, {x: 960, y: 1660, size: 20}, {x: 1140, y: 1760, size: 24},
+                    {x: 1320, y: 1700, size: 21}, {x: 1460, y: 1640, size: 20},
+                    
+                    {x: 260, y: 2020, size: 23}, {x: 460, y: 2060, size: 20}, {x: 660, y: 1980, size: 22},
+                    {x: 860, y: 2040, size: 19}, {x: 1060, y: 2000, size: 21}, {x: 1240, y: 2080, size: 24}
+                ];
+                
+                snowflakes.forEach(sf => {
+                    drawStar(sf.x, sf.y, sf.size);
+                });
                 
                 // Карточка с зелёным свечением
                 ctx.shadowColor = 'rgba(73, 159, 135, 0.4)';
@@ -190,19 +220,11 @@
                 roundRect(ctx, 200, 400, 1200, 1400, 60);
                 ctx.stroke();
                 
-                // Санта
-                ctx.font = '160px Arial';
-                ctx.save();
-                ctx.translate(1320, 370);
-                ctx.scale(-1, 1);
-                ctx.fillText('🎅', 0, 0);
-                ctx.restore();
-                
                 // Заголовок
                 ctx.fillStyle = '#FF5252';
                 ctx.font = 'bold 90px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('✉️ Почта Деда Мороза', 800, 580);
+                ctx.fillText('Вам новогоднее письмо', 800, 580);
                 
                 ctx.fillStyle = '#135D46';
                 ctx.font = '38px Arial';
