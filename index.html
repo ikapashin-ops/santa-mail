@@ -224,15 +224,15 @@
                 ctx.fillStyle = '#FF5252';
                 ctx.font = 'bold 90px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('Вам новогоднее письмо', 800, 580);
+                ctx.fillText('🔔 Почта Деда Мороза', 800, 580);
                 
                 ctx.fillStyle = '#135D46';
-                ctx.font = '38px Arial';
-                ctx.fillText('Новогоднее письмо', 800, 660);
+                ctx.font = '44px Arial';
+                ctx.fillText('Новое письмо от коллеги!', 800, 660);
                 
                 // Линия
-                ctx.strokeStyle = 'rgba(73, 159, 135, 0.3)';
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#499F87';
+                ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.moveTo(300, 720);
                 ctx.lineTo(1300, 720);
@@ -246,8 +246,8 @@
                 ctx.font = '40px Arial';
                 ctx.fillText(sender, 300, 870);
                 
-                ctx.strokeStyle = 'rgba(73, 159, 135, 0.2)';
-                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#499F87';
+                ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.moveTo(300, 920);
                 ctx.lineTo(1300, 920);
@@ -287,10 +287,10 @@
                     month: 'long', 
                     year: 'numeric' 
                 });
-                ctx.fillStyle = 'rgba(19, 93, 70, 0.6)';
-                ctx.font = '28px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(date, 800, 1750);
+                ctx.fillStyle = '#135D46';
+                ctx.font = '32px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText(date, 1300, 1750);
                 
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({
